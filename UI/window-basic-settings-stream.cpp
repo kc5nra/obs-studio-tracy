@@ -29,6 +29,7 @@ extern QCefCookieManager *panel_cookies;
 enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
+	WebRTC,
 };
 
 enum class Section : int {
@@ -39,6 +40,11 @@ enum class Section : int {
 inline bool OBSBasicSettings::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
+}
+
+inline bool OBSBasicSettings::IsWebRTC() const
+{
+	return ui->service->currentData().toInt() == (int)ListOpt::WebRTC;
 }
 
 void OBSBasicSettings::InitStreamPage()
@@ -119,9 +125,12 @@ void OBSBasicSettings::LoadStream1Settings()
 	const char *server = obs_data_get_string(settings, "server");
 	const char *key = obs_data_get_string(settings, "key");
 
+	if (strcmp(type, "rtmp_custom") == 0 || strcmp(type, "webrtc") == 0) {
+		ui->customServer->setText(server);
+	}
+
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
-		ui->customServer->setText(server);
 		lastServiceIdx = 0;
 
 		bool use_auth = obs_data_get_bool(settings, "use_auth");
@@ -208,14 +217,21 @@ void OBSBasicSettings::LoadStream1Settings()
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
-	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
+	bool webrtc = IsWebRTC();
+	const char *service_id = "rtmp_common";
+
+	if (customServer) {
+		service_id = "rtmp_custom";
+	} else if (webrtc) {
+		service_id = "webrtc";
+	}
 
 	obs_service_t *oldService = main->GetService();
 	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!customServer) {
+	if (!customServer && !webrtc) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
@@ -278,7 +294,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 void OBSBasicSettings::UpdateMoreInfoLink()
 {
-	if (IsCustomService()) {
+	if (IsCustomService() || IsWebRTC()) {
 		ui->moreInfoButton->hide();
 		return;
 	}
@@ -371,6 +387,9 @@ void OBSBasicSettings::LoadServices(bool showAll)
 
 	for (QString &name : names)
 		ui->service->addItem(name);
+
+	ui->service->insertItem(0, QTStr("WebRTC"),
+				QVariant((int)ListOpt::WebRTC));
 
 	if (!showAll) {
 		ui->service->addItem(
@@ -467,6 +486,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
+	bool webrtc = IsWebRTC();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
@@ -483,7 +503,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
-	if (custom) {
+	if (custom || webrtc) {
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 						   ui->serverStackedWidget);
 
@@ -576,11 +596,18 @@ void OBSBasicSettings::on_authPwShow_clicked()
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
-	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
+	bool webrtc = IsWebRTC();
+	const char *service_id = "rtmp_common";
+
+	if (custom) {
+		service_id = "rtmp_custom";
+	} else if (webrtc) {
+		service_id = "webrtc";
+	}
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!custom) {
+	if (!custom && !webrtc) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
