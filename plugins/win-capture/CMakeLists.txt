@@ -28,7 +28,7 @@ target_sources(
           ../../libobs/util/windows/obfuscate.c
           ../../libobs/util/windows/obfuscate.h)
 
-target_link_libraries(win-capture PRIVATE OBS::libobs OBS::ipc-util)
+target_link_libraries(win-capture PRIVATE OBS::libobs OBS::ipc-util OBS::tracy_interface)
 
 set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 

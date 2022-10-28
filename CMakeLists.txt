@@ -32,6 +32,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Global project options
+option(ENABLE_TRACY "Enable Tracy profiling" ON)
+if(ENABLE_TRACY)
+  add_compile_definitions(TRACY_ENABLE TRACY_MANUAL_LIFETIME TRACY_DELAYED_INIT NOMINMAX)
+endif()
 option(ENABLE_HEVC "Enable HEVC encoders" ON)
 if(ENABLE_HEVC)
   add_compile_definitions(ENABLE_HEVC)

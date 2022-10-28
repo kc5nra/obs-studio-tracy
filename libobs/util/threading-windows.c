@@ -36,6 +36,8 @@
 #endif
 #endif
 
+#include <tracy/TracyC.h>
+
 int os_event_init(os_event_t **event, enum os_event_type type)
 {
 	HANDLE handle;
@@ -168,6 +170,7 @@ struct vs_threadname_info {
 
 void os_set_thread_name(const char *name)
 {
+	TracyCSetThreadName(name);
 #ifdef __MINGW32__
 	UNUSED_PARAMETER(name);
 #else

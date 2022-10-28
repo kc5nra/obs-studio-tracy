@@ -33,6 +33,8 @@
 #include "bmem.h"
 #include "threading.h"
 
+#include <tracy/TracyC.h>
+
 struct os_event_data {
 	pthread_mutex_t mutex;
 	pthread_cond_t cond;
@@ -257,6 +259,7 @@ int os_sem_wait(os_sem_t *sem)
 
 void os_set_thread_name(const char *name)
 {
+	TracyCSetThreadName(name);
 #if defined(__APPLE__)
 	pthread_setname_np(name);
 #elif defined(__FreeBSD__)

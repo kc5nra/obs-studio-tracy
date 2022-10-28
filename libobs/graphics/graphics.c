@@ -322,6 +322,17 @@ int gs_get_device_type(void)
 		       : -1;
 }
 
+void *gs_get_tracy_context(void)
+{
+	if (!gs_valid("gs_get_tracy_context")) {
+		return NULL;
+	}
+
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_get_tracy_context(graphics->device);
+}
+
 static inline struct matrix4 *top_matrix(graphics_t *graphics)
 {
 	return graphics->matrix_stack.array + graphics->cur_matrix;

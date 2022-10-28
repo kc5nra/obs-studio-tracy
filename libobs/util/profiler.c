@@ -10,6 +10,8 @@
 
 #include <zlib.h>
 
+#include <tracy/TracyC.h>
+
 //#define TRACK_OVERHEAD
 
 struct profiler_snapshot {
@@ -42,6 +44,9 @@ struct profile_call {
 	uint64_t end_time;
 #ifdef TRACK_OVERHEAD
 	uint64_t overhead_end;
+#endif
+#ifdef TRACY_ENABLE
+	TracyCZoneCtx tracy_context;
 #endif
 	uint64_t expected_time_between_calls;
 	DARRAY(profile_call) children;
@@ -268,6 +273,7 @@ void profiler_start(void)
 	pthread_mutex_lock(&root_mutex);
 	enabled = true;
 	pthread_mutex_unlock(&root_mutex);
+	___tracy_startup_profiler();
 }
 
 void profiler_stop(void)
@@ -275,6 +281,7 @@ void profiler_stop(void)
 	pthread_mutex_lock(&root_mutex);
 	enabled = false;
 	pthread_mutex_unlock(&root_mutex);
+	___tracy_shutdown_profiler();
 }
 
 void profile_reenable_thread(void)
@@ -367,13 +374,22 @@ static void merge_context(profile_call *context)
 
 void profile_start(const char *name)
 {
+
 	if (!thread_enabled)
 		return;
+
+#ifdef TRACY_ENABLE
+	TracyCZone(ctx, true);
+	TracyCZoneName(ctx, name, strlen(name));
+#endif
 
 	profile_call new_call = {
 		.name = name,
 #ifdef TRACK_OVERHEAD
 		.overhead_start = os_gettime_ns(),
+#endif
+#ifdef TRACY_ENABLE
+		.tracy_context = ctx,
 #endif
 		.parent = thread_context,
 	};
@@ -431,6 +447,10 @@ void profile_end(const char *name)
 	call->end_time = end;
 #ifdef TRACK_OVERHEAD
 	call->overhead_end = os_gettime_ns();
+#endif
+
+#ifdef TRACY_ENABLE
+	TracyCZoneEnd(call->tracy_context);
 #endif
 
 	if (call->parent)

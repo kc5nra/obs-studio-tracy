@@ -17,6 +17,8 @@
 
 #include "obs-internal.h"
 
+#include <tracy/TracyC.h>
+
 static void *gpu_encode_thread(struct obs_core_video_mix *video)
 {
 	uint64_t interval = video_output_get_frame_time(video->video);
@@ -66,6 +68,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 		/* -------------- */
 
+		TracyCZoneN(encode_loop_ctx, "encode_loop", true);
 		for (size_t i = 0; i < encoders.num; i++) {
 			struct encoder_packet pkt = {0};
 			bool received = false;
@@ -102,17 +105,19 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			else
 				next_key++;
 
+			TracyCZoneN(encode_texture_ctx, "encode_texture", true);
 			success = encoder->info.encode_texture(
 				encoder->context.data, tf.handle,
 				encoder->cur_pts, lock_key, &next_key, &pkt,
 				&received);
 			send_off_encoder_packet(encoder, success, received,
 						&pkt);
-
+			TracyCZoneEnd(encode_texture_ctx);
 			lock_key = next_key;
 
 			encoder->cur_pts += encoder->timebase_num;
 		}
+		TracyCZoneEnd(encode_loop_ctx);
 
 		/* -------------- */
 

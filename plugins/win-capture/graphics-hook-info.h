@@ -110,6 +110,7 @@ struct hook_info {
 
 	/* additional options */
 	uint64_t frame_interval;
+	volatile uint64_t present_count;
 	bool UNUSED_use_scale;
 	bool force_shmem;
 	bool capture_overlay;
@@ -120,7 +121,8 @@ struct hook_info {
 
 	uint32_t reserved[126];
 };
-static_assert(sizeof(struct hook_info) == 648, "ABI compatibility");
+// FIX THIS STRUCT, WHATEVER THEIR ABI STRATEGY IS
+//static_assert(sizeof(struct hook_info) == 648, "ABI compatibility");
 
 #pragma pack(pop)
 

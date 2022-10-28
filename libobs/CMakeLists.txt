@@ -248,7 +248,8 @@ target_link_libraries(
           Jansson::Jansson
           OBS::caption
           ZLIB::ZLIB
-  PUBLIC Threads::Threads)
+          OBS::tracy
+  PUBLIC  Threads::Threads)
 
 set_target_properties(
   libobs

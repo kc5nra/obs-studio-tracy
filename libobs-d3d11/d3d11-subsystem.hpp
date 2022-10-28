@@ -36,6 +36,9 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/HRError.hpp>
 
+#include <tracy/Tracy.hpp>
+#include <tracy/TracyD3D11.hpp>
+
 // #define DISASSEMBLE_SHADERS
 
 struct shader_var;
@@ -979,6 +982,7 @@ struct mat4float {
 	float mat[16];
 };
 
+<<<<<<< HEAD
 struct gs_monitor_color_info {
 	bool hdr;
 	UINT bits_per_color;
@@ -986,6 +990,11 @@ struct gs_monitor_color_info {
 	gs_monitor_color_info(bool hdr, int bits_per_color)
 		: hdr(hdr), bits_per_color(bits_per_color)
 	{
+=======
+struct tracy_deleter {
+	void operator()(TracyD3D11Ctx context) {
+		TracyD3D11Destroy(context);
+>>>>>>> 341778ef8 (Add initial Tracy support)
 	}
 };
 
@@ -997,6 +1006,9 @@ struct gs_device {
 	uint32_t adpIdx = 0;
 	bool nv12Supported = false;
 	bool p010Supported = false;
+
+	const std::string contextName;
+	std::unique_ptr<std::remove_pointer_t<TracyD3D11Ctx>, tracy_deleter> tracy_context;
 
 	gs_texture_2d *curRenderTarget = nullptr;
 	gs_zstencil_buffer *curZStencilBuffer = nullptr;
@@ -1074,7 +1086,7 @@ struct gs_device {
 
 	bool HasBadNV12Output();
 
-	gs_device(uint32_t adapterIdx);
+	gs_device(uint32_t adapterIdx, const std::string &contextName = "d3d11_context");
 	~gs_device();
 };
 

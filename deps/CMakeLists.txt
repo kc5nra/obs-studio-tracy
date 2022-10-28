@@ -25,3 +25,5 @@ if(NOT TARGET Jansson::Jansson)
 else()
   obs_status(STATUS "Using system Jansson library.")
 endif()
+
+include(tracy.cmake)
