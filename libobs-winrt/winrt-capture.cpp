@@ -87,13 +87,13 @@ static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 		uint32_t texture_width = 1;
 		if (width > left) {
 			texture_width =
-				min(width - left, (uint32_t)client_rect.right);
+				std::min(width - left, (uint32_t)client_rect.right);
 		}
 
 		uint32_t texture_height = 1;
 		if (height > top) {
 			texture_height =
-				min(height - top, (uint32_t)client_rect.bottom);
+				std::min(height - top, (uint32_t)client_rect.bottom);
 		}
 
 		client_box->right = left + texture_width;
