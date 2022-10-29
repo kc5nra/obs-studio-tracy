@@ -20,7 +20,7 @@ target_sources(
           gl-vertexbuffer.c
           gl-zstencil.c)
 
-target_link_libraries(libobs-opengl PRIVATE OBS::libobs OBS::obsglad)
+target_link_libraries(libobs-opengl PRIVATE OBS::libobs OBS::obsglad OBS::tracy_interface)
 
 set_target_properties(
   libobs-opengl
