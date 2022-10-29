@@ -863,17 +863,14 @@ static inline void output_frame(struct obs_core_video_mix *video)
 
 	profile_start(output_frame_gs_context_name);
 	gs_enter_context(obs->video.graphics);
-	TracyCFrameMarkNamed(output_frame_render_video_name);
-	TracyCFrameMark;
+	profile_mark_render_frame();
 
-	TracyCZoneN(render_video_ctx, "render_video", true);
 	profile_start(output_frame_render_video_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_RENDER_VIDEO,
 			      output_frame_render_video_name);
 	render_video(video, raw_active, gpu_active, cur_texture);
 	GS_DEBUG_MARKER_END();
 	profile_end(output_frame_render_video_name);
-	TracyCZoneEnd(render_video_ctx);
 
 	if (raw_active) {
 		profile_start(output_frame_download_frame_name);

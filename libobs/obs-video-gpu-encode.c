@@ -19,6 +19,9 @@
 
 #include <tracy/TracyC.h>
 
+static const char *gpu_encode_loop_name = "gpu_encode_loop_name";
+static const char *encode_texture_name = "encode_texture";
+
 static void *gpu_encode_thread(struct obs_core_video_mix *video)
 {
 	uint64_t interval = video_output_get_frame_time(video->video);
@@ -28,7 +31,6 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 	da_init(encoders);
 
 	os_set_thread_name("obs gpu encode thread");
-
 	while (os_sem_wait(video->gpu_encode_semaphore) == 0) {
 		struct obs_tex_frame tf;
 		uint64_t timestamp;
@@ -68,7 +70,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 		/* -------------- */
 
-		TracyCZoneN(encode_loop_ctx, "encode_loop", true);
+		profile_start(gpu_encode_loop_name);
 		for (size_t i = 0; i < encoders.num; i++) {
 			struct encoder_packet pkt = {0};
 			bool received = false;
@@ -105,19 +107,25 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			else
 				next_key++;
 
-			TracyCZoneN(encode_texture_ctx, "encode_texture", true);
+			if (!encoder->profile_encoder_encode_name)
+				encoder->profile_encoder_encode_name =
+					profile_store_name(
+						obs_get_profiler_name_store(),
+						"gpu_encode(%s)",
+						encoder->context.name);
+			profile_start(encoder->profile_encoder_encode_name);
 			success = encoder->info.encode_texture(
 				encoder->context.data, tf.handle,
 				encoder->cur_pts, lock_key, &next_key, &pkt,
 				&received);
 			send_off_encoder_packet(encoder, success, received,
 						&pkt);
-			TracyCZoneEnd(encode_texture_ctx);
+			profile_end(encoder->profile_encoder_encode_name);
 			lock_key = next_key;
 
 			encoder->cur_pts += encoder->timebase_num;
 		}
-		TracyCZoneEnd(encode_loop_ctx);
+		profile_end(gpu_encode_loop_name);
 
 		/* -------------- */
 

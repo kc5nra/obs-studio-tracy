@@ -3,6 +3,7 @@
 #include <obs-hotkey.h>
 #include <util/dstr.h>
 #include <util/platform.h>
+#include <util/profiler.h>
 #include <util/threading.h>
 #include <util/windows/window-helpers.h>
 #include <windows.h>
@@ -164,7 +165,8 @@ struct game_capture {
 	uint64_t last_tick_time_ns;
 	double game_capture_tick_per_second;
 	double game_presents_per_second;
-
+	const char *game_capture_source_name;
+	const char *game_capture_profile_name;
 	struct game_capture_config config;
 
 	ipc_pipe_server_t pipe;
@@ -1785,8 +1787,18 @@ static void check_foreground_window(struct game_capture *gc, float seconds)
 
 static void game_capture_tick(void *data, float seconds)
 {
-	TracyCZoneN(ctx, "game_capture_tick", true);
 	struct game_capture *gc = data;
+
+	const char *source_name = obs_source_get_name(gc->source);
+	if (source_name != gc->game_capture_source_name) {
+		gc->game_capture_source_name = source_name;
+		gc->game_capture_profile_name = profile_store_name(
+			obs_get_profiler_name_store(), "game_capture_tick(%s)",
+			obs_source_get_name(gc->source));
+	}
+
+	profile_start(gc->game_capture_profile_name);
+
 	bool deactivate = os_atomic_set_bool(&gc->deactivate_hook, false);
 	bool activate_now = os_atomic_set_bool(&gc->activate_hook_now, false);
 
@@ -1819,7 +1831,7 @@ static void game_capture_tick(void *data, float seconds)
 				stop_capture(gc);
 			gc->showing = false;
 		}
-		TracyCZoneEnd(ctx);
+		profile_end(gc->game_capture_profile_name);
 		return;
 
 	} else if (!gc->showing) {
@@ -1953,9 +1965,9 @@ static void game_capture_tick(void *data, float seconds)
 
 				gc->last_tick_time_ns = current_time_ns;
 
-				TracyCPlot("game_capture_ticks_per_second",
+				profile_plot("game_capture_ticks_per_second",
 						gc->game_capture_tick_per_second);
-				TracyCPlot("game_presents_per_second",
+				profile_plot("game_presents_per_second",
 						gc->game_presents_per_second);
 			}
 		}
@@ -1964,7 +1976,7 @@ static void game_capture_tick(void *data, float seconds)
 	if (!gc->showing)
 		gc->showing = true;
 
-	TracyCZoneEnd(ctx);
+	profile_end(gc->game_capture_profile_name);
 }
 
 static inline void game_capture_render_cursor(struct game_capture *gc)
