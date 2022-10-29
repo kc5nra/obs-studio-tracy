@@ -1942,28 +1942,22 @@ static void game_capture_tick(void *data, float seconds)
 			if (delta > PERIOD_NS) {
 				const double decay = 0.5;
 				gc->game_capture_tick_per_second =
-					decay * gc->game_capture_tick_per_second +
-					(1.0 - decay) * gc->game_capture_ticks *
-						((double)NSEC_PER_SEC /
-						 (double)delta);
+					gc->game_capture_ticks *
+					((double)NSEC_PER_SEC / (double)delta);
 				gc->game_capture_ticks = 0;
 
 				gc->game_presents_per_second =
-					decay * gc->game_presents_per_second +
-					(1.0 - decay) *
-						gc->global_hook_info
-							->present_count *
-						((double)NSEC_PER_SEC /
-						 (double)delta);
+					gc->global_hook_info->present_count *
+					((double)NSEC_PER_SEC / (double)delta);
 				gc->global_hook_info->present_count = 0;
 
 				gc->last_tick_time_ns = current_time_ns;
-			}
 
-			TracyCPlot("game_capture_ticks_per_second",
-				   gc->game_capture_tick_per_second);
-			TracyCPlot("game_presents_per_second",
-				   gc->game_presents_per_second);
+				TracyCPlot("game_capture_ticks_per_second",
+						gc->game_capture_tick_per_second);
+				TracyCPlot("game_presents_per_second",
+						gc->game_presents_per_second);
+			}
 		}
 	}
 
