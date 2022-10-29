@@ -459,6 +459,21 @@ void profile_end(const char *name)
 	merge_context(call);
 }
 
+void profile_plot(const char *name, double value)
+{
+	TracyCPlot(name, value);
+}
+
+void profile_mark_render_frame()
+{
+	TracyCFrameMark;
+}
+
+void profile_mark_frame(const char* name)
+{
+	TracyCFrameMarkNamed(name);
+}
+
 static int profiler_time_entry_compare(const void *first, const void *second)
 {
 	int64_t diff = ((profiler_time_entry *)second)->time_delta -

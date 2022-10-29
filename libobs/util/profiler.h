@@ -22,6 +22,10 @@ EXPORT void profile_end(const char *name);
 
 EXPORT void profile_reenable_thread(void);
 
+EXPORT void profile_plot(const char *name, double value);
+EXPORT void profile_mark_render_frame();
+EXPORT void profile_mark_frame(const char *name);
+
 /* ------------------------------------------------------------------------- */
 /* Profiler control */
 
