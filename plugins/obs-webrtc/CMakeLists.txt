@@ -10,23 +10,6 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Corrosion)
 
-include_directories(${LIBCURL_INCLUDE_DIRS})
-
-include_directories(${OBS_JANSSON_INCLUDE_DIRS})
-
-option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
-
-find_package(
-  FFmpeg REQUIRED
-  COMPONENTS avcodec
-             avfilter
-             avdevice
-             avutil
-             swscale
-             avformat
-             swresample)
-include_directories(${FFMPEG_INCLUDE_DIRS})
-
 set(obs-webrtc_HEADERS webrtc-output.h)
 set(obs-webrtc_SOURCES webrtc-service.c webrtc-output.c webrtc.c)
 
@@ -41,8 +24,7 @@ add_library(obs-webrtc MODULE ${obs-webrtc_SOURCES} ${obs-webrtc_HEADERS})
 
 corrosion_import_crate(MANIFEST_PATH webrtc/Cargo.toml)
 
-target_link_libraries(obs-webrtc libobs webrtc-rs-lib
-${OBS_JANSSON_IMPORT} ${LIBCURL_LIBRARIES} ${FFMPEG_LIBRARIES})
+target_link_libraries(obs-webrtc OBS::libobs webrtc-rs-lib)
 
 if(OS_MACOS)
   find_library(COREFOUNDATION CoreFoundation)
