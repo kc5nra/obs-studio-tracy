@@ -99,9 +99,7 @@ static void webrtc_output_data(void *data, struct encoder_packet *packet)
 	if (packet->type == OBS_ENCODER_VIDEO) {
 		duration = packet->dts_usec - output->video_timestamp;
 		output->video_timestamp = packet->dts_usec;
-	}
-
-	if (packet->type == OBS_ENCODER_AUDIO) {
+	} else if (packet->type == OBS_ENCODER_AUDIO) {
 		is_audio = true;
 		duration = packet->dts_usec - output->audio_timestamp;
 		output->audio_timestamp = packet->dts_usec;

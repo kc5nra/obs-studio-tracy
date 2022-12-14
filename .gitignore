@@ -44,6 +44,7 @@ GeneratedFiles/
 /CI/include/*.lock.json
 install_temp/
 /plugins/obs-webrtc/webrtc/target/
+/plugins/obs-webrtc/webrtc/bindings.h
 
 /other/
 
