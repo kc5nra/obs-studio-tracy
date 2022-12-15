@@ -4,9 +4,8 @@ include(FetchContent)
 
 FetchContent_Declare(
   Corrosion
-  GIT_REPOSITORY https://github.com/AndrewGaspar/corrosion.git
-  GIT_TAG origin/master # Optionally specify a version tag or branch here
-)
+  GIT_REPOSITORY https://github.com/corrosion-rs/corrosion.git
+  GIT_TAG v0.3.1)
 
 FetchContent_MakeAvailable(Corrosion)
 
