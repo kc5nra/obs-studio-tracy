@@ -1,13 +1,13 @@
 use anyhow::Result;
 use log::{debug, warn};
-use reqwest::header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE, LOCATION};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub async fn offer(
     url: &str,
     bearer_token: &str,
     local_desc: RTCSessionDescription,
-) -> Result<RTCSessionDescription> {
+) -> Result<(RTCSessionDescription, Option<String>)> {
     let client = reqwest::Client::new();
 
     let mut headers = reqwest::header::HeaderMap::new();
@@ -27,9 +27,16 @@ pub async fn offer(
         .send()
         .await?;
 
+    let whip_resource = res
+        .headers()
+        .get(LOCATION)
+        .map(|v| v.to_str().map(|v| v.to_owned()).ok())
+        .flatten();
+
     let body = res.text().await?;
     let sdp = RTCSessionDescription::answer(body)?;
-    Ok(sdp)
+
+    Ok((sdp, whip_resource))
 }
 
 pub async fn delete(url: &str) -> Result<()> {

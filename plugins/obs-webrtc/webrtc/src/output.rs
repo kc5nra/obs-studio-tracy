@@ -23,10 +23,6 @@ use webrtc::rtp_transceiver::RTCRtpTransceiverInit;
 use webrtc::stats::StatsReportType;
 use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSample;
 
-struct WHIPResource {
-    url: String,
-}
-
 pub struct OutputStream {
     video_track: Arc<TrackLocalStaticSample>,
     audio_track: Arc<TrackLocalStaticSample>,
@@ -34,7 +30,7 @@ pub struct OutputStream {
     done_tx: Sender<()>,
     bytes_sent: Arc<Mutex<u64>>,
     stats_future: Arc<Mutex<Option<JoinHandle<()>>>>,
-    whip_resource: Arc<Mutex<Option<WHIPResource>>>,
+    whip_resource: Arc<Mutex<Option<String>>>,
 }
 
 impl OutputStream {
@@ -162,11 +158,11 @@ impl OutputStream {
             .await
             .ok_or_else(|| anyhow!("No local description available"))?;
         let answer = whip::offer(url, bearer_token, offer).await?;
-        self.peer_connection.set_remote_description(answer).await?;
+        self.peer_connection
+            .set_remote_description(answer.0)
+            .await?;
 
-        *self.whip_resource.lock().unwrap() = Some(WHIPResource {
-            url: String::from(""), // todo
-        });
+        *self.whip_resource.lock().unwrap() = answer.1;
 
         Ok(())
     }
@@ -183,10 +179,7 @@ impl OutputStream {
 
         let whip_resource = self.whip_resource.lock().unwrap().take();
         if let Some(whip_resource) = whip_resource {
-            whip::delete(
-                &whip_resource.url.clone(),
-            )
-            .await?;
+            whip::delete(&whip_resource).await?;
         }
         Ok(self.peer_connection.close().await?)
     }

@@ -70,6 +70,7 @@ static void whip_service_apply_encoder_settings(void *data,
 						obs_data_t *video_settings,
 						obs_data_t *audio_settings)
 {
+	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(audio_settings);
 
 	// For now, ensure maximum compatibility with webrtc peers
