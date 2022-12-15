@@ -79,11 +79,8 @@ static void webrtc_service_apply_encoder_settings(void *data,
 	// For now, ensure maximum compatibility with webrtc peers
 	if (video_settings) {
 		obs_data_set_int(video_settings, "bf", 0);
-		obs_data_set_int(video_settings, "keyint_sec", 2);
-		obs_data_set_string(video_settings, "rate_control", "CBR");
-		obs_data_set_string(video_settings, "x264opts",
-				    "tune=zerolatency b-pyramid=0 scenecut=0");
 		obs_data_set_string(video_settings, "profile", "baseline");
+		obs_data_set_string(video_settings, "rate_control", "CBR");
 	}
 }
 
