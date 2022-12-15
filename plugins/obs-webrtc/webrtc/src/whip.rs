@@ -27,6 +27,7 @@ pub async fn offer(
         .send()
         .await?;
 
+    //  Retrieve resource from location and ensure it's non-empty
     let whip_resource = res
         .headers()
         .get(LOCATION)

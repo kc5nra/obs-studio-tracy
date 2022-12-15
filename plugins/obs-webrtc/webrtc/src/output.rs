@@ -157,12 +157,10 @@ impl OutputStream {
             .local_description()
             .await
             .ok_or_else(|| anyhow!("No local description available"))?;
-        let answer = whip::offer(url, bearer_token, offer).await?;
-        self.peer_connection
-            .set_remote_description(answer.0)
-            .await?;
+        let (answer, whip_resource) = whip::offer(url, bearer_token, offer).await?;
+        self.peer_connection.set_remote_description(answer).await?;
 
-        *self.whip_resource.lock().unwrap() = answer.1;
+        *self.whip_resource.lock().unwrap() = whip_resource;
 
         Ok(())
     }
