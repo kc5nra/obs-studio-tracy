@@ -1,7 +1,8 @@
-use std::env;
+use std::{env, path::PathBuf};
 
 fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let bindings_dir: PathBuf = env::var("BINDINGS_OUTPUT_DIR").unwrap().into();
 
     let config = cbindgen::Config {
         language: cbindgen::Language::C,
@@ -9,8 +10,8 @@ fn main() {
     };
 
     match cbindgen::generate_with_config(&crate_dir, config) {
-        Ok(bindings) => bindings.write_to_file("./bindings.h"),
+        Ok(bindings) => bindings.write_to_file(bindings_dir.join("bindings.h")),
         Err(cbindgen::Error::ParseSyntaxError { .. }) => false, // ignore in favor of cargo's syntax check
-        Err(err) => panic!("{:?}", err)
+        Err(err) => panic!("{:?}", err),
     };
 }

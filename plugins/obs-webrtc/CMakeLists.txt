@@ -22,8 +22,11 @@ endif()
 add_library(obs-webrtc MODULE ${obs-webrtc_SOURCES} ${obs-webrtc_HEADERS})
 
 corrosion_import_crate(MANIFEST_PATH webrtc/Cargo.toml)
+corrosion_set_env_vars(webrtc-rs-lib
+                       BINDINGS_OUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(obs-webrtc OBS::libobs webrtc-rs-lib)
+target_include_directories(obs-webrtc PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 if(OS_MACOS)
   find_library(COREFOUNDATION CoreFoundation)

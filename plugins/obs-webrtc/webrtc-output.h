@@ -1,5 +1,5 @@
 #include "obs-module.h"
-#include "./webrtc/bindings.h"
+#include "bindings.h"
 #include <util/threading.h>
 
 struct webrtc_output {

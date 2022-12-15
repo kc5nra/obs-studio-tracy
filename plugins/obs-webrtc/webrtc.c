@@ -1,5 +1,5 @@
 #include <obs-module.h>
-#include "./webrtc/bindings.h"
+#include "bindings.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-webrtc", "en-US")
