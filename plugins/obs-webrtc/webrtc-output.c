@@ -21,6 +21,7 @@ static void *webrtc_output_create(obs_data_t *settings,
 		goto fail;
 
 	return output;
+
 fail:
 	pthread_mutex_destroy(&output->write_mutex);
 	bfree(output);
@@ -42,16 +43,14 @@ static bool webrtc_output_start(void *data)
 	obs_service_t *service;
 
 	service = obs_output_get_service(output->output);
-	if (!service) {
+	if (!service)
 		return false;
-	}
 
-	if (!obs_output_can_begin_data_capture(output->output, 0)) {
+	if (!obs_output_can_begin_data_capture(output->output, 0))
 		return false;
-	}
-	if (!obs_output_initialize_encoders(output->output, 0)) {
+
+	if (!obs_output_initialize_encoders(output->output, 0))
 		return false;
-	}
 
 	output->obsrtc = obs_webrtc_output_new();
 	if (!output->obsrtc) {
@@ -137,9 +136,8 @@ static uint64_t webrtc_output_total_bytes_sent(void *data)
 	struct webrtc_output *output = data;
 	pthread_mutex_lock(&output->write_mutex);
 	uint64_t bytes_sent = 0;
-	if (output->obsrtc) {
+	if (output->obsrtc)
 		bytes_sent = obs_webrtc_output_bytes_sent(output->obsrtc);
-	}
 	pthread_mutex_unlock(&output->write_mutex);
 
 	return bytes_sent;
