@@ -2,7 +2,7 @@ use std::{env, path::PathBuf};
 
 fn main() {
     let crate_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let bindings_dir: PathBuf = env::var("BINDINGS_OUTPUT_DIR").unwrap().into();
+    let bindings_dir: PathBuf = env::var("OBS_WEBRTC_GENERATED_DIR").unwrap().into();
 
     let config = cbindgen::Config {
         language: cbindgen::Language::C,
