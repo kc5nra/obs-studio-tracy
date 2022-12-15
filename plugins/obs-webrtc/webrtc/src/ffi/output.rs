@@ -9,7 +9,7 @@ pub struct OBSWebRTCWHIPOutput {
     runtime: Runtime,
 }
 
-/// Create a new webrtc output in rust and leak the pointer to caller
+/// Create a new whip output in rust and leak the pointer to caller
 /// # Note
 /// You must call `obs_webrtc_whip_output_free` on the returned value
 #[no_mangle]
@@ -23,23 +23,23 @@ pub extern "C" fn obs_webrtc_whip_output_new() -> *mut OBSWebRTCWHIPOutput {
         })))
     })()
     .unwrap_or_else(|e| {
-        error!("Unable to create webrtc output: {e:?}");
+        error!("Unable to create whip output: {e:?}");
         std::ptr::null_mut::<OBSWebRTCWHIPOutput>()
     })
 }
 
-/// Free the webrtc output
+/// Free the whip output
 /// # Safety
 /// Called only from C
 #[no_mangle]
 pub unsafe extern "C" fn obs_webrtc_whip_output_free(output: *mut OBSWebRTCWHIPOutput) {
-    info!("Freeing webrtc output");
+    info!("Freeing whip output");
     if !output.is_null() {
         drop(Box::from_raw(output));
     }
 }
 
-/// Retrieve the bytes sent during the session by the webrtc output
+/// Retrieve the bytes sent during the session by the whip output
 /// # Safety
 /// Called only from C
 #[no_mangle]
@@ -69,31 +69,31 @@ pub unsafe extern "C" fn obs_webrtc_whip_output_connect(
     output.runtime.spawn(async move {
         let result = output.stream.connect(&url, &stream_key).await;
         if let Err(e) = result {
-            error!("Failed connecting to webrtc output: {e:?}");
+            error!("Failed connecting to whip output: {e:?}");
             // Close the peer connection so that future writes fail and disconnect the output
             // TODO: There should be some nuance about a connection failure and a mid-connection failure
             output
                 .stream
                 .close()
                 .await
-                .unwrap_or_else(|e| error!("Failed closing webrtc output after error: {e:?}"));
+                .unwrap_or_else(|e| error!("Failed closing whip output after error: {e:?}"));
         }
     });
 }
 
-/// Close the webrtc output and terminate the peer connection
+/// Close the whip output and terminate the peer connection
 /// # Note
 /// Once closed, you cannot call `obs_webrtc_whip_output_connect` again
 #[no_mangle]
 pub extern "C" fn obs_webrtc_whip_output_close(output: &'static OBSWebRTCWHIPOutput) {
-    info!("Closing webrtc output");
+    info!("Closing whip output");
     output
         .runtime
         .block_on(async { output.stream.close().await })
-        .unwrap_or_else(|e| error!("Failed closing webrtc output: {e:?}"))
+        .unwrap_or_else(|e| error!("Failed closing whip output: {e:?}"))
 }
 
-/// Write an audio or video packet to the webrtc output
+/// Write an audio or video packet to the whip output
 /// # Safety
 /// Called only from C
 #[no_mangle]
@@ -123,7 +123,7 @@ pub unsafe extern "C" fn obs_webrtc_whip_output_write(
             }
         })
         .unwrap_or_else(|e| {
-            error!("Failed to write packets to webrtc output: {e:?}");
+            error!("Failed to write packets to whip output: {e:?}");
             false
         })
 }
