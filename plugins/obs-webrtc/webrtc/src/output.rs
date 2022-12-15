@@ -2,6 +2,7 @@ use crate::whip;
 use anyhow::{anyhow, bail, Result};
 use bytes::Bytes;
 use log::{debug, error, info};
+use reqwest::Url;
 use std::boxed::Box;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -30,7 +31,7 @@ pub struct OutputStream {
     done_tx: Sender<()>,
     bytes_sent: Arc<Mutex<u64>>,
     stats_future: Arc<Mutex<Option<JoinHandle<()>>>>,
-    whip_resource: Arc<Mutex<Option<String>>>,
+    whip_resource: Arc<Mutex<Option<Url>>>,
 }
 
 impl OutputStream {
@@ -110,7 +111,7 @@ impl OutputStream {
         })
     }
 
-    pub async fn connect(&self, url: &str, bearer_token: &str) -> Result<()> {
+    pub async fn connect(&self, url: &str, bearer_token: Option<&str>) -> Result<()> {
         println!("Setting up webrtc!");
 
         self.peer_connection.add_transceiver_from_track(self.video_track.clone(), &[RTCRtpTransceiverInit {
@@ -160,7 +161,7 @@ impl OutputStream {
         let (answer, whip_resource) = whip::offer(url, bearer_token, offer).await?;
         self.peer_connection.set_remote_description(answer).await?;
 
-        *self.whip_resource.lock().unwrap() = whip_resource;
+        *self.whip_resource.lock().unwrap() = Some(whip_resource);
 
         Ok(())
     }

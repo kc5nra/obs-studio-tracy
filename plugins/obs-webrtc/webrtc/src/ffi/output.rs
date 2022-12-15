@@ -61,13 +61,22 @@ pub unsafe extern "C" fn obs_webrtc_whip_output_connect(
     bearer_token: *const c_char,
 ) {
     let url = std::ffi::CStr::from_ptr(url).to_str().unwrap().to_owned();
-    let bearer_token = std::ffi::CStr::from_ptr(bearer_token)
-        .to_str()
-        .unwrap()
-        .to_owned();
+    let bearer_token = if !bearer_token.is_null() {
+        Some(
+            std::ffi::CStr::from_ptr(bearer_token)
+                .to_str()
+                .unwrap()
+                .to_owned(),
+        )
+    } else {
+        None
+    };
 
     output.runtime.spawn(async move {
-        let result = output.stream.connect(&url, &bearer_token).await;
+        let result = output
+            .stream
+            .connect(&url, bearer_token.as_ref().map(|b| b.as_str()))
+            .await;
         if let Err(e) = result {
             error!("Failed connecting to whip output: {e:?}");
             // Close the peer connection so that future writes fail and disconnect the output
