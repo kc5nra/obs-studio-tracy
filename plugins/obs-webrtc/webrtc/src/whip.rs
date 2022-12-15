@@ -11,12 +11,14 @@ pub async fn offer(
     let client = reqwest::Client::new();
 
     let mut headers = reqwest::header::HeaderMap::new();
-
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/sdp"));
-    headers.insert(
-        AUTHORIZATION,
-        HeaderValue::from_str(&format!("Bearer {bearer_token}"))?,
-    );
+
+    if !bearer_token.is_empty() {
+        headers.insert(
+            AUTHORIZATION,
+            HeaderValue::from_str(&format!("Bearer {bearer_token}"))?,
+        );
+    }
 
     let res = client
         .post(url)
@@ -30,21 +32,19 @@ pub async fn offer(
     Ok(sdp)
 }
 
-pub async fn delete(url: &str, bearer_token: &str) -> Result<()> {
+pub async fn delete(url: &str) -> Result<()> {
+    if url.is_empty() {
+        debug!("Not sending DELETE since there is no WHIP resource.");
+        return Ok(());
+    }
+
     let client = reqwest::Client::new();
 
-    let mut headers = reqwest::header::HeaderMap::new();
-
-    headers.append(
-        AUTHORIZATION,
-        HeaderValue::from_str(&format!("Bearer {bearer_token}"))?,
-    );
-
-    debug!("Sending DELETE to whip endpoint");
-    let res = client.delete(url).headers(headers).send().await?;
+    debug!("Sending DELETE to whip resource.");
+    let res = client.delete(url).send().await?;
 
     if !res.status().is_success() {
-        warn!("Failed DELETE of whip endpoint: {}", res.status())
+        warn!("Failed DELETE of whip resource: {}", res.status())
     }
 
     Ok(())

@@ -23,9 +23,8 @@ use webrtc::rtp_transceiver::RTCRtpTransceiverInit;
 use webrtc::stats::StatsReportType;
 use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSample;
 
-struct WHIPEndpoint {
+struct WHIPResource {
     url: String,
-    bearer_token: String,
 }
 
 pub struct OutputStream {
@@ -35,7 +34,7 @@ pub struct OutputStream {
     done_tx: Sender<()>,
     bytes_sent: Arc<Mutex<u64>>,
     stats_future: Arc<Mutex<Option<JoinHandle<()>>>>,
-    whip_endpoint: Arc<Mutex<Option<WHIPEndpoint>>>,
+    whip_resource: Arc<Mutex<Option<WHIPResource>>>,
 }
 
 impl OutputStream {
@@ -111,7 +110,7 @@ impl OutputStream {
             done_tx,
             bytes_sent,
             stats_future: Arc::new(Mutex::new(Some(stats_future))),
-            whip_endpoint: Arc::new(Mutex::new(None)),
+            whip_resource: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -165,9 +164,8 @@ impl OutputStream {
         let answer = whip::offer(url, bearer_token, offer).await?;
         self.peer_connection.set_remote_description(answer).await?;
 
-        *self.whip_endpoint.lock().unwrap() = Some(WHIPEndpoint {
-            url: url.to_owned(),
-            bearer_token: bearer_token.to_owned(),
+        *self.whip_resource.lock().unwrap() = Some(WHIPResource {
+            url: String::from(""), // todo
         });
 
         Ok(())
@@ -183,11 +181,10 @@ impl OutputStream {
                 .unwrap_or_else(|e| error!("Failed joining stats thread: {e:?}"));
         }
 
-        let whip_endpoint = self.whip_endpoint.lock().unwrap().take();
-        if let Some(whip_endpoint) = whip_endpoint {
+        let whip_resource = self.whip_resource.lock().unwrap().take();
+        if let Some(whip_resource) = whip_resource {
             whip::delete(
-                &whip_endpoint.url.clone(),
-                &whip_endpoint.bearer_token.clone(),
+                &whip_resource.url.clone(),
             )
             .await?;
         }
