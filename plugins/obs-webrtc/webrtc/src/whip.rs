@@ -1,5 +1,5 @@
 use anyhow::Result;
-use reqwest::header::{HeaderValue, AUTHORIZATION};
+use reqwest::header::{HeaderValue, CONTENT_TYPE, AUTHORIZATION};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub async fn offer(
@@ -11,7 +11,11 @@ pub async fn offer(
 
     let mut headers = reqwest::header::HeaderMap::new();
 
-    headers.append(
+    headers.insert(
+        CONTENT_TYPE,
+        HeaderValue::from_static("application/sdp")
+    );
+    headers.insert(
         AUTHORIZATION,
         HeaderValue::from_str(&format!("Bearer {stream_key}"))?,
     );
