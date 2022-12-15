@@ -25,7 +25,7 @@ use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSampl
 
 struct WHIPEndpoint {
     url: String,
-    stream_key: String,
+    bearer_token: String,
 }
 
 pub struct OutputStream {
@@ -115,7 +115,7 @@ impl OutputStream {
         })
     }
 
-    pub async fn connect(&self, url: &str, stream_key: &str) -> Result<()> {
+    pub async fn connect(&self, url: &str, bearer_token: &str) -> Result<()> {
         println!("Setting up webrtc!");
 
         self.peer_connection.add_transceiver_from_track(self.video_track.clone(), &[RTCRtpTransceiverInit {
@@ -162,12 +162,12 @@ impl OutputStream {
             .local_description()
             .await
             .ok_or_else(|| anyhow!("No local description available"))?;
-        let answer = whip::offer(url, stream_key, offer).await?;
+        let answer = whip::offer(url, bearer_token, offer).await?;
         self.peer_connection.set_remote_description(answer).await?;
 
         *self.whip_endpoint.lock().unwrap() = Some(WHIPEndpoint {
             url: url.to_owned(),
-            stream_key: stream_key.to_owned(),
+            bearer_token: bearer_token.to_owned(),
         });
 
         Ok(())
@@ -187,7 +187,7 @@ impl OutputStream {
         if let Some(whip_endpoint) = whip_endpoint {
             whip::delete(
                 &whip_endpoint.url.clone(),
-                &whip_endpoint.stream_key.clone(),
+                &whip_endpoint.bearer_token.clone(),
             )
             .await?;
         }

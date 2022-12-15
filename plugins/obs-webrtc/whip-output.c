@@ -1,8 +1,9 @@
 #include "whip-output.h"
 
-static const char *whip_output_getname(void *unused)
+static const char *whip_output_getname(void *type_data)
 {
-	UNUSED_PARAMETER(unused);
+	UNUSED_PARAMETER(type_data);
+
 	return obs_module_text("whip_output");
 }
 
@@ -40,6 +41,8 @@ static bool whip_output_start(void *data)
 {
 	struct whip_output *output = data;
 	obs_service_t *service;
+	obs_data_t *service_settings;
+	const char *url, *bearer_token;
 
 	service = obs_output_get_service(output->output);
 	if (!service)
@@ -57,12 +60,18 @@ static bool whip_output_start(void *data)
 		return false;
 	}
 
-	obs_webrtc_whip_output_connect(output->whip_output,
-				       obs_service_get_url(service),
-				       obs_service_get_key(service));
+	service_settings = obs_service_get_settings(service);
+	if (!service_settings)
+		return false;
+
+	url = obs_service_get_url(service);
+	bearer_token = obs_data_get_string(service_settings, "bearer_token");
+
+	obs_webrtc_whip_output_connect(output->whip_output, url, bearer_token);
 
 	obs_output_begin_data_capture(output->output, 0);
 
+	obs_data_release(service_settings);
 	return true;
 }
 

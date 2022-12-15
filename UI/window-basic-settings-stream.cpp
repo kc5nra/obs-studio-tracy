@@ -116,6 +116,9 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
+	bool is_rtmp_custom = (strcmp(type, "rtmp_custom") == 0);
+	bool is_rtmp_common = (strcmp(type, "rtmp_common") == 0);
+	bool is_whip = (strcmp(type, "whip_custom") == 0);
 
 	loading = true;
 
@@ -124,13 +127,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	const char *service = obs_data_get_string(settings, "service");
 	const char *server = obs_data_get_string(settings, "server");
 	const char *key = obs_data_get_string(settings, "key");
+	const char *bearer_token =
+		obs_data_get_string(settings, "bearer_token");
 
-	if (strcmp(type, "rtmp_custom") == 0 ||
-	    strcmp(type, "whip_custom") == 0) {
+	if (is_rtmp_custom || is_whip)
 		ui->customServer->setText(server);
-	}
 
-	if (strcmp(type, "rtmp_custom") == 0) {
+	if (is_rtmp_custom) {
 		ui->service->setCurrentIndex(0);
 		lastServiceIdx = 0;
 
@@ -184,7 +187,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	UpdateServerList();
 
-	if (strcmp(type, "rtmp_common") == 0) {
+	if (is_rtmp_common) {
 		int idx = ui->server->findData(server);
 		if (idx == -1) {
 			if (server && *server)
@@ -194,7 +197,10 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->server->setCurrentIndex(idx);
 	}
 
-	ui->key->setText(key);
+	if (is_whip)
+		ui->key->setText(bearer_token);
+	else
+		ui->key->setText(key);
 
 	lastService.clear();
 	on_service_currentIndexChanged(0);
@@ -272,7 +278,12 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_bool(settings, "bwtest", false);
 	}
 
-	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
+	if (whip)
+		obs_data_set_string(settings, "bearer_token",
+				    QT_TO_UTF8(ui->key->text()));
+	else
+		obs_data_set_string(settings, "key",
+				    QT_TO_UTF8(ui->key->text()));
 
 	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
@@ -345,6 +356,9 @@ void OBSBasicSettings::UpdateKeyLink()
 	if (serviceName == "Dacast") {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+	} else if (IsWHIP()) {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.BearerToken"));
 	} else if (!IsCustomService()) {
 		ui->streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
@@ -618,7 +632,13 @@ OBSService OBSBasicSettings::SpawnTempService()
 			settings, "server",
 			QT_TO_UTF8(ui->customServer->text().trimmed()));
 	}
-	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
+
+	if (whip)
+		obs_data_set_string(settings, "bearer_token",
+				    QT_TO_UTF8(ui->key->text()));
+	else
+		obs_data_set_string(settings, "key",
+				    QT_TO_UTF8(ui->key->text()));
 
 	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "temp_service", settings, nullptr);

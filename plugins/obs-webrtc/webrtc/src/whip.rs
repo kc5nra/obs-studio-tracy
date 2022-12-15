@@ -5,7 +5,7 @@ use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub async fn offer(
     url: &str,
-    stream_key: &str,
+    bearer_token: &str,
     local_desc: RTCSessionDescription,
 ) -> Result<RTCSessionDescription> {
     let client = reqwest::Client::new();
@@ -15,7 +15,7 @@ pub async fn offer(
     headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/sdp"));
     headers.insert(
         AUTHORIZATION,
-        HeaderValue::from_str(&format!("Bearer {stream_key}"))?,
+        HeaderValue::from_str(&format!("Bearer {bearer_token}"))?,
     );
 
     let res = client
@@ -30,14 +30,14 @@ pub async fn offer(
     Ok(sdp)
 }
 
-pub async fn delete(url: &str, stream_key: &str) -> Result<()> {
+pub async fn delete(url: &str, bearer_token: &str) -> Result<()> {
     let client = reqwest::Client::new();
 
     let mut headers = reqwest::header::HeaderMap::new();
 
     headers.append(
         AUTHORIZATION,
-        HeaderValue::from_str(&format!("Bearer {stream_key}"))?,
+        HeaderValue::from_str(&format!("Bearer {bearer_token}"))?,
     );
 
     debug!("Sending DELETE to whip endpoint");
