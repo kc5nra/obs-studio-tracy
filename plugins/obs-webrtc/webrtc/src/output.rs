@@ -23,6 +23,11 @@ use webrtc::rtp_transceiver::RTCRtpTransceiverInit;
 use webrtc::stats::StatsReportType;
 use webrtc::track::track_local::track_local_static_sample::TrackLocalStaticSample;
 
+struct WHIPEndpoint {
+    url: String,
+    stream_key: String,
+}
+
 pub struct OutputStream {
     video_track: Arc<TrackLocalStaticSample>,
     audio_track: Arc<TrackLocalStaticSample>,
@@ -30,6 +35,7 @@ pub struct OutputStream {
     done_tx: Sender<()>,
     bytes_sent: Arc<Mutex<u64>>,
     stats_future: Arc<Mutex<Option<JoinHandle<()>>>>,
+    whip_endpoint: Arc<Mutex<Option<WHIPEndpoint>>>,
 }
 
 impl OutputStream {
@@ -105,6 +111,7 @@ impl OutputStream {
             done_tx,
             bytes_sent,
             stats_future: Arc::new(Mutex::new(Some(stats_future))),
+            whip_endpoint: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -158,6 +165,11 @@ impl OutputStream {
         let answer = whip::offer(url, stream_key, offer).await?;
         self.peer_connection.set_remote_description(answer).await?;
 
+        *self.whip_endpoint.lock().unwrap() = Some(WHIPEndpoint {
+            url: url.to_owned(),
+            stream_key: stream_key.to_owned(),
+        });
+
         Ok(())
     }
 
@@ -169,6 +181,15 @@ impl OutputStream {
             stats_future
                 .await
                 .unwrap_or_else(|e| error!("Failed joining stats thread: {e:?}"));
+        }
+
+        let whip_endpoint = self.whip_endpoint.lock().unwrap().take();
+        if let Some(whip_endpoint) = whip_endpoint {
+            whip::delete(
+                &whip_endpoint.url.clone(),
+                &whip_endpoint.stream_key.clone(),
+            )
+            .await?;
         }
         Ok(self.peer_connection.close().await?)
     }

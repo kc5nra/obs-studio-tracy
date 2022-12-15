@@ -1,5 +1,6 @@
 use anyhow::Result;
-use reqwest::header::{HeaderValue, CONTENT_TYPE, AUTHORIZATION};
+use log::{debug, warn};
+use reqwest::header::{HeaderValue, AUTHORIZATION, CONTENT_TYPE};
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
 
 pub async fn offer(
@@ -11,10 +12,7 @@ pub async fn offer(
 
     let mut headers = reqwest::header::HeaderMap::new();
 
-    headers.insert(
-        CONTENT_TYPE,
-        HeaderValue::from_static("application/sdp")
-    );
+    headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/sdp"));
     headers.insert(
         AUTHORIZATION,
         HeaderValue::from_str(&format!("Bearer {stream_key}"))?,
@@ -30,4 +28,24 @@ pub async fn offer(
     let body = res.text().await?;
     let sdp = RTCSessionDescription::answer(body)?;
     Ok(sdp)
+}
+
+pub async fn delete(url: &str, stream_key: &str) -> Result<()> {
+    let client = reqwest::Client::new();
+
+    let mut headers = reqwest::header::HeaderMap::new();
+
+    headers.append(
+        AUTHORIZATION,
+        HeaderValue::from_str(&format!("Bearer {stream_key}"))?,
+    );
+
+    debug!("Sending DELETE to whip endpoint");
+    let res = client.delete(url).headers(headers).send().await?;
+
+    if !res.status().is_success() {
+        warn!("Failed DELETE of whip endpoint: {}", res.status())
+    }
+
+    Ok(())
 }

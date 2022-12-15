@@ -81,11 +81,11 @@ static void whip_output_stop(void *data, uint64_t ts)
 
 	struct whip_output *output = data;
 
-	obs_output_end_data_capture(output->output);
-
 	pthread_mutex_lock(&output->write_mutex);
 	whip_output_close_unsafe(output);
 	pthread_mutex_unlock(&output->write_mutex);
+
+	obs_output_end_data_capture(output->output);
 }
 
 static void whip_output_data(void *data, struct encoder_packet *packet)
