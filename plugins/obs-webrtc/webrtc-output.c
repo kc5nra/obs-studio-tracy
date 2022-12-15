@@ -40,7 +40,6 @@ static bool webrtc_output_start(void *data)
 {
 	struct webrtc_output *output = data;
 	obs_service_t *service;
-	const char *key, *url;
 
 	service = obs_output_get_service(output->output);
 	if (!service) {
