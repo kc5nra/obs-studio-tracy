@@ -4,24 +4,27 @@ use log::{error, info};
 use std::{os::raw::c_char, slice, time::Duration};
 use tokio::runtime::Runtime;
 
-pub struct OBSWebRTCOutput {
+pub struct OBSWebRTCWHIPOutput {
     stream: OutputStream,
     runtime: Runtime,
 }
 
 /// Create a new webrtc output in rust and leak the pointer to caller
 /// # Note
-/// You must call `obs_webrtc_output_free` on the returned value
+/// You must call `obs_webrtc_whip_output_free` on the returned value
 #[no_mangle]
-pub extern "C" fn obs_webrtc_output_new() -> *mut OBSWebRTCOutput {
-    (|| -> Result<*mut OBSWebRTCOutput> {
+pub extern "C" fn obs_webrtc_whip_output_new() -> *mut OBSWebRTCWHIPOutput {
+    (|| -> Result<*mut OBSWebRTCWHIPOutput> {
         let runtime = tokio::runtime::Runtime::new()?;
         let stream = runtime.block_on(async { OutputStream::new().await })?;
-        Ok(Box::into_raw(Box::new(OBSWebRTCOutput { stream, runtime })))
+        Ok(Box::into_raw(Box::new(OBSWebRTCWHIPOutput {
+            stream,
+            runtime,
+        })))
     })()
     .unwrap_or_else(|e| {
         error!("Unable to create webrtc output: {e:?}");
-        std::ptr::null_mut::<OBSWebRTCOutput>()
+        std::ptr::null_mut::<OBSWebRTCWHIPOutput>()
     })
 }
 
@@ -29,7 +32,7 @@ pub extern "C" fn obs_webrtc_output_new() -> *mut OBSWebRTCOutput {
 /// # Safety
 /// Called only from C
 #[no_mangle]
-pub unsafe extern "C" fn obs_webrtc_output_free(output: *mut OBSWebRTCOutput) {
+pub unsafe extern "C" fn obs_webrtc_whip_output_free(output: *mut OBSWebRTCWHIPOutput) {
     info!("Freeing webrtc output");
     if !output.is_null() {
         drop(Box::from_raw(output));
@@ -40,7 +43,9 @@ pub unsafe extern "C" fn obs_webrtc_output_free(output: *mut OBSWebRTCOutput) {
 /// # Safety
 /// Called only from C
 #[no_mangle]
-pub unsafe extern "C" fn obs_webrtc_output_bytes_sent(output: &'static OBSWebRTCOutput) -> u64 {
+pub unsafe extern "C" fn obs_webrtc_whip_output_bytes_sent(
+    output: &'static OBSWebRTCWHIPOutput,
+) -> u64 {
     output.stream.bytes_sent()
 }
 
@@ -50,8 +55,8 @@ pub unsafe extern "C" fn obs_webrtc_output_bytes_sent(output: &'static OBSWebRTC
 /// # Safety
 /// Called only from C
 #[no_mangle]
-pub unsafe extern "C" fn obs_webrtc_output_connect(
-    output: &'static OBSWebRTCOutput,
+pub unsafe extern "C" fn obs_webrtc_whip_output_connect(
+    output: &'static OBSWebRTCWHIPOutput,
     url: *const c_char,
     stream_key: *const c_char,
 ) {
@@ -78,9 +83,9 @@ pub unsafe extern "C" fn obs_webrtc_output_connect(
 
 /// Close the webrtc output and terminate the peer connection
 /// # Note
-/// Once closed, you cannot call `obs_webrtc_output_connect` again
+/// Once closed, you cannot call `obs_webrtc_whip_output_connect` again
 #[no_mangle]
-pub extern "C" fn obs_webrtc_output_close(output: &'static OBSWebRTCOutput) {
+pub extern "C" fn obs_webrtc_whip_output_close(output: &'static OBSWebRTCWHIPOutput) {
     info!("Closing webrtc output");
     output
         .runtime
@@ -92,8 +97,8 @@ pub extern "C" fn obs_webrtc_output_close(output: &'static OBSWebRTCOutput) {
 /// # Safety
 /// Called only from C
 #[no_mangle]
-pub unsafe extern "C" fn obs_webrtc_output_write(
-    output: &'static OBSWebRTCOutput,
+pub unsafe extern "C" fn obs_webrtc_whip_output_write(
+    output: &'static OBSWebRTCWHIPOutput,
     data: *const u8,
     size: usize,
     duration: u64,

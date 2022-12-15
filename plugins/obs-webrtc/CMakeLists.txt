@@ -9,8 +9,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Corrosion)
 
-set(obs-webrtc_HEADERS webrtc-output.h)
-set(obs-webrtc_SOURCES webrtc-service.c webrtc-output.c webrtc.c)
+set(obs-webrtc_HEADERS whip-output.h)
+set(obs-webrtc_SOURCES whip-service.c whip-output.c webrtc.c)
 
 if(WIN32)
   set(MODULE_DESCRIPTION "OBS webrtc module")
