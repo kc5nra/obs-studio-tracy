@@ -920,15 +920,13 @@ static void mach_set_thread_realtime(uint64_t period, double busy,
 		     "error setting rt thread, thread_policy_set: %s",
 		     mach_error_type(kr));
 	}
-
-	pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
 }
 
 void *obs_graphics_thread_autorelease(void *param)
 {
 	// Set the priority of this thread for osx for better timer precision
-	const double GRAPHICS_THREAD_BUSY = 0.5;
-	const double GRAPHICS_THREAD_BUSY_LIMIT = 1.0;
+	const double GRAPHICS_THREAD_BUSY = 0.75;
+	const double GRAPHICS_THREAD_BUSY_LIMIT = 0.85;
 	const bool GRAPHICS_THREAD_PREEMPTIBLE = false;
 
 	mach_set_thread_realtime(obs->video.video_frame_interval_ns,
