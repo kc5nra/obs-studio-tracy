@@ -27,6 +27,11 @@
 #include <Carbon/Carbon.h>
 #include <IOKit/hid/IOHIDDevice.h>
 #include <IOKit/hid/IOHIDManager.h>
+#include <Foundation/NSProcessInfo.h>
+
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#include <pthread.h>
 
 #import <AppKit/AppKit.h>
 
@@ -889,8 +894,38 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *plat,
 	return plat->is_key_down[key];
 }
 
+static void mach_set_thread_realtime()
+{
+	mach_timebase_info_data_t timebase_info;
+	mach_timebase_info(&timebase_info);
+
+	const uint64_t NANOS_PER_MSEC = 1000000ULL;
+	double clock2abs =
+		((double)timebase_info.denom / (double)timebase_info.numer) *
+		NANOS_PER_MSEC;
+
+	thread_time_constraint_policy_data_t policy;
+	policy.period = 0;
+	policy.computation = (uint32_t)(5 * clock2abs);
+	policy.constraint = (uint32_t)(10 * clock2abs);
+	policy.preemptible = FALSE;
+
+	int kr = thread_policy_set(pthread_mach_thread_np(pthread_self()),
+				   THREAD_TIME_CONSTRAINT_POLICY,
+				   (thread_policy_t)&policy,
+				   THREAD_TIME_CONSTRAINT_POLICY_COUNT);
+	if (kr != KERN_SUCCESS) {
+		blog(LOG_ERROR,
+		     "error setting rt thread, thread_policy_set: %s",
+		     mach_error_type(kr));
+		exit(1);
+	}
+}
+
 void *obs_graphics_thread_autorelease(void *param)
 {
+	// Set the priority of this thread for osx for better timer precision
+	mach_set_thread_realtime();
 	@autoreleasepool {
 		return obs_graphics_thread(param);
 	}
