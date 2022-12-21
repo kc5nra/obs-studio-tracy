@@ -899,15 +899,19 @@ static void mach_set_thread_realtime()
 	mach_timebase_info_data_t timebase_info;
 	mach_timebase_info(&timebase_info);
 
+	const uint64_t PERIOD_MS = 16;
 	const uint64_t NANOS_PER_MSEC = 1000000ULL;
-	double clock2abs =
+
+	double realtime_period =
 		((double)timebase_info.denom / (double)timebase_info.numer) *
-		NANOS_PER_MSEC;
+		NANOS_PER_MSEC * PERIOD_MS;
 
 	thread_time_constraint_policy_data_t policy;
-	policy.period = 0;
-	policy.computation = (uint32_t)(5 * clock2abs);
-	policy.constraint = (uint32_t)(10 * clock2abs);
+	policy.period = (uint32_t)(realtime_period);
+	policy.computation =
+		(uint32_t)(realtime_period * 0.5); // busy = 50% of period
+	policy.constraint = (uint32_t)(realtime_period *
+				       1.0); // busy limit = 100% of period
 	policy.preemptible = FALSE;
 
 	int kr = thread_policy_set(pthread_mach_thread_np(pthread_self()),
