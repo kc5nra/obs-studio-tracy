@@ -899,12 +899,11 @@ static void mach_set_thread_realtime()
 	mach_timebase_info_data_t timebase_info;
 	mach_timebase_info(&timebase_info);
 
-	const uint64_t PERIOD_MS = 16;
-	const uint64_t NANOS_PER_MSEC = 1000000ULL;
+	const uint64_t frame_interval = obs->video.video_frame_interval_ns;
 
 	double realtime_period =
 		((double)timebase_info.denom / (double)timebase_info.numer) *
-		NANOS_PER_MSEC * PERIOD_MS;
+		frame_interval;
 
 	thread_time_constraint_policy_data_t policy;
 	policy.period = (uint32_t)(realtime_period);
