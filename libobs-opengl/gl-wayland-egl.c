@@ -338,16 +338,19 @@ static void gl_wayland_egl_device_load_swapchain(gs_device_t *device,
 	}
 }
 
+const static char gl_wayland_egl_device_present_name = "gl_wayland_egl_device_present";
 static void gl_wayland_egl_device_present(gs_device_t *device)
 {
 	struct gl_platform *plat = device->plat;
 	struct gl_windowinfo *wi = device->cur_swap->wi;
+	profile_start(gl_wayland_egl_device_present_name);
 	if (eglSwapInterval(plat->display, 0) == EGL_FALSE) {
 		blog(LOG_ERROR, "eglSwapInterval failed");
 	}
 	if (eglSwapBuffers(plat->display, wi->egl_surface) == EGL_FALSE) {
 		blog(LOG_ERROR, "eglSwapBuffers failed");
 	}
+	profile_end(gl_wayland_egl_device_present_name);
 }
 
 static struct gs_texture *gl_wayland_egl_device_texture_create_from_dmabuf(

@@ -541,12 +541,14 @@ static void gl_x11_egl_device_load_swapchain(gs_device_t *device,
 	device_enter_context(device);
 }
 
+const static char gl_x11_egl_device_present_name = "gl_x11_egl_device_present";
 static void gl_x11_egl_device_present(gs_device_t *device)
 {
 	Display *display = device->plat->xdisplay;
 
 	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
 	xcb_generic_event_t *xcb_event;
+	profile_start(gl_wayland_egl_device_present_name);
 	while ((xcb_event = xcb_poll_for_event(xcb_conn))) {
 		free(xcb_event);
 	}
@@ -558,6 +560,7 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 			    device->cur_swap->wi->surface))
 		blog(LOG_ERROR, "Cannot swap EGL buffers: %s",
 		     get_egl_error_string());
+	profile_end(gl_wayland_egl_device_present_name);
 }
 
 static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(

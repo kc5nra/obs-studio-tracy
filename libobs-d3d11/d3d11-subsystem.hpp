@@ -982,7 +982,6 @@ struct mat4float {
 	float mat[16];
 };
 
-<<<<<<< HEAD
 struct gs_monitor_color_info {
 	bool hdr;
 	UINT bits_per_color;
@@ -990,11 +989,12 @@ struct gs_monitor_color_info {
 	gs_monitor_color_info(bool hdr, int bits_per_color)
 		: hdr(hdr), bits_per_color(bits_per_color)
 	{
-=======
+	}
+};
+
 struct tracy_deleter {
 	void operator()(TracyD3D11Ctx context) {
 		TracyD3D11Destroy(context);
->>>>>>> 341778ef8 (Add initial Tracy support)
 	}
 };
 

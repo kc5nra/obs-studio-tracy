@@ -82,25 +82,38 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 /* in obs-display.c */
 extern void render_display(struct obs_display *display);
 
+const static char *render_displays_lock_name = "render_displays_lock";
+const static char *render_displays_unlock_name = "render_displays_unlock";
+
 static inline void render_displays(void)
 {
 	struct obs_display *display;
 
 	if (!obs->data.valid)
 		return;
-
 	gs_enter_context(obs->video.graphics);
 
 	/* render extra displays/swaps */
+	profile_start(render_displays_lock_name);
 	pthread_mutex_lock(&obs->data.displays_mutex);
+	profile_end(render_displays_lock_name);
 
 	display = obs->data.first_display;
 	while (display) {
+		uint32_t width, height;
+		obs_display_size(display, &width, &height);
+		const char *display_name =
+			profile_store_name(obs_get_profiler_name_store(),
+				   "render_display(%ux%u)", width, height);
+		profile_start(display_name);
 		render_display(display);
+		profile_end(display_name);
 		display = display->next;
 	}
 
+	profile_start(render_displays_unlock_name);
 	pthread_mutex_unlock(&obs->data.displays_mutex);
+	profile_end(render_displays_unlock_name);
 
 	gs_leave_context();
 }
@@ -802,6 +815,7 @@ static inline void output_video_data(struct obs_core_video_mix *video,
 static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 			       uint64_t interval_ns)
 {
+	TracyCZoneN(z1, "video_sleep", true);
 	struct obs_vframe_info vframe_info;
 	uint64_t cur_time = *p_time;
 	uint64_t t = cur_time + interval_ns;
@@ -828,6 +842,7 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 	vframe_info.count = count;
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
+	TracyCZoneN(z2, "video_sleep", true);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
 		struct obs_core_video_mix *video = obs->video.mixes.array[i];
 		bool raw_active = video->raw_was_active;
@@ -841,6 +856,8 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 					    &vframe_info, sizeof(vframe_info));
 	}
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
+	TracyCZoneEnd(z2);
+	TracyCZoneEnd(z1);
 }
 
 static const char *output_frame_gs_context_name = "gs_context(video->graphics)";
@@ -1099,6 +1116,7 @@ static inline bool stop_requested(void)
 
 bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 {
+	TracyCZoneN(ctx, "obs_graphics_thread_loop", true);
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
 
@@ -1157,6 +1175,8 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		context->fps_total_ns = 0;
 		context->fps_total_frames = 0;
 	}
+
+	TracyCZoneEnd(ctx);
 
 	return !stop_requested();
 }

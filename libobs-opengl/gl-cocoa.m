@@ -295,27 +295,48 @@ bool device_is_present_ready(gs_device_t *device)
 	return true;
 }
 
+static const char *gl_cocoa_device_present_name = "gl_cocoa_device_present";
+static const char *gl_cocoa_device_present_lock_context_name = "lock_context";
+static const char *gl_cocoa_device_present_make_current_name = "make_current";
+static const char *gl_cocoa_device_present_blit_framebuffer_name = "blit_framebuffer";
+static const char *gl_cocoa_device_present_context_flush_name = "context_flush";
+static const char *gl_cocoa_device_present_gl_flush_name = "gl_flush";
 void device_present(gs_device_t *device)
 {
+	profile_start(gl_cocoa_device_present_name);
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
 
+	profile_start(gl_cocoa_device_present_lock_context_name);
 	CGLLockContext([device->cur_swap->wi->context CGLContextObj]);
+	profile_end(gl_cocoa_device_present_lock_context_name);
 
+
+	profile_start(gl_cocoa_device_present_make_current_name);
 	[device->cur_swap->wi->context makeCurrentContext];
+	profile_end(gl_cocoa_device_present_make_current_name);
+
 	gl_bind_framebuffer(GL_READ_FRAMEBUFFER, device->cur_swap->wi->fbo);
 	gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	const uint32_t width = device->cur_swap->info.cx;
 	const uint32_t height = device->cur_swap->info.cy;
+	profile_start(gl_cocoa_device_present_blit_framebuffer_name);
 	glBlitFramebuffer(0, 0, width, height, 0, height, width, 0,
 			  GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	profile_end(gl_cocoa_device_present_blit_framebuffer_name);
+
+	profile_start(gl_cocoa_device_present_context_flush_name);
 	[device->cur_swap->wi->context flushBuffer];
+	profile_end(gl_cocoa_device_present_context_flush_name);
+	profile_start(gl_cocoa_device_present_gl_flush_name);
 	glFlush();
+	profile_end(gl_cocoa_device_present_gl_flush_name);
 	[NSOpenGLContext clearCurrentContext];
 
 	CGLUnlockContext([device->cur_swap->wi->context CGLContextObj]);
 
 	[device->plat->context makeCurrentContext];
+	profile_end(gl_cocoa_device_present_name);
 }
 
 bool device_is_monitor_hdr(gs_device_t *device, void *monitor)

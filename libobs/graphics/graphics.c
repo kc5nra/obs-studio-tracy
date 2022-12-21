@@ -28,6 +28,8 @@
 #include "effect-parser.h"
 #include "effect.h"
 
+#include <tracy/TracyC.h>
+
 #ifdef near
 #undef near
 #endif
@@ -262,6 +264,7 @@ void gs_destroy(graphics_t *graphics)
 
 void gs_enter_context(graphics_t *graphics)
 {
+	TracyCZoneN(z1, "gs_enter_context", true);
 	if (!ptr_valid(graphics, "gs_enter_context"))
 		return;
 
@@ -278,6 +281,7 @@ void gs_enter_context(graphics_t *graphics)
 	}
 
 	os_atomic_inc_long(&graphics->ref);
+	TracyCZoneEnd(z1);
 }
 
 void gs_leave_context(void)
