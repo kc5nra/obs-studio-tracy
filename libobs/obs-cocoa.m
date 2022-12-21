@@ -894,24 +894,22 @@ bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *plat,
 	return plat->is_key_down[key];
 }
 
-static void mach_set_thread_realtime()
+static void mach_set_thread_realtime(uint64_t period, double busy,
+				     double busy_limit, bool preemptible)
 {
 	mach_timebase_info_data_t timebase_info;
 	mach_timebase_info(&timebase_info);
 
-	const uint64_t frame_interval = obs->video.video_frame_interval_ns;
-
 	double realtime_period =
 		((double)timebase_info.denom / (double)timebase_info.numer) *
-		frame_interval;
+		period;
 
 	thread_time_constraint_policy_data_t policy;
-	policy.period = (uint32_t)(realtime_period);
-	policy.computation =
-		(uint32_t)(realtime_period * 0.5); // busy = 50% of period
-	policy.constraint = (uint32_t)(realtime_period *
-				       1.0); // busy limit = 100% of period
-	policy.preemptible = FALSE;
+	policy.period = (uint32_t)realtime_period;
+	policy.computation = (uint32_t)(realtime_period * busy);
+	policy.constraint = (uint32_t)(realtime_period * busy_limit);
+
+	policy.preemptible = preemptible;
 
 	int kr = thread_policy_set(pthread_mach_thread_np(pthread_self()),
 				   THREAD_TIME_CONSTRAINT_POLICY,
@@ -921,14 +919,23 @@ static void mach_set_thread_realtime()
 		blog(LOG_ERROR,
 		     "error setting rt thread, thread_policy_set: %s",
 		     mach_error_type(kr));
-		exit(1);
 	}
+
+	pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
 }
 
 void *obs_graphics_thread_autorelease(void *param)
 {
 	// Set the priority of this thread for osx for better timer precision
-	mach_set_thread_realtime();
+	const double GRAPHICS_THREAD_BUSY = 0.5;
+	const double GRAPHICS_THREAD_BUSY_LIMIT = 1.0;
+	const bool GRAPHICS_THREAD_PREEMPTIBLE = false;
+
+	mach_set_thread_realtime(obs->video.video_frame_interval_ns,
+				 GRAPHICS_THREAD_BUSY,
+				 GRAPHICS_THREAD_BUSY_LIMIT,
+				 GRAPHICS_THREAD_PREEMPTIBLE);
+
 	@autoreleasepool {
 		return obs_graphics_thread(param);
 	}
